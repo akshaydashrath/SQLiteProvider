@@ -62,7 +62,6 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
      */
     protected abstract int deleteInTransaction(Uri uri, String selection, String[] selectionArgs);
 
-    protected abstract void notifyChange();
 
     protected SQLiteOpenHelper getDatabaseHelper() {
         return mOpenHelper;
@@ -227,5 +226,9 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
             mNotifyChange = false;
             notifyChange();
         }
+    }
+    
+    protected void notifyChange() {
+
     }
 }

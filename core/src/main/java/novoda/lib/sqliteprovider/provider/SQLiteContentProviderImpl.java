@@ -90,17 +90,12 @@ public class SQLiteContentProviderImpl extends SQLiteContentProvider {
         return count;
     }
 
-    @Override
-    protected void notifyChange() {
-
-    }
-
     public void notifyUriChange(Uri uri) {
         getContext().getContentResolver().notifyChange(uri, null, getNotificationSyncToNetwork());
     }
 
     public boolean getNotificationSyncToNetwork() {
-        return false;
+        return true;
     }
 
     @Override
@@ -147,8 +142,12 @@ public class SQLiteContentProviderImpl extends SQLiteContentProvider {
         logger.logEnd(projection, selection, selectionArgs, sortOrder, builder, groupBy, having, limit, autoproj);
 
         Cursor cursor = builder.query(getReadableDatabase(), projection, selection, selectionArgs, groupBy, having, sortOrder, limit);
-        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        setContentObserver(uri, cursor);
         return cursor;
+    }
+
+    public void setContentObserver(Uri uri, Cursor cursor) {
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);        
     }
 
     protected ExtendedSQLiteQueryBuilder getSQLiteQueryBuilder() {
