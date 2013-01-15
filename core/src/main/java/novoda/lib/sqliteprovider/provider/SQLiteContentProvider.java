@@ -33,8 +33,6 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
     private final ThreadLocal<Boolean> mApplyingBatch = new ThreadLocal<Boolean>();
     private SQLiteOpenHelper mOpenHelper;
 
-    private volatile boolean mNotifyChange;
-
     @Override
     public boolean onCreate() {
         mOpenHelper = getDatabaseHelper(getContext());
@@ -53,15 +51,13 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
      * The equivalent of the {@link #update} method, but invoked within a
      * transaction.
      */
-    protected abstract int updateInTransaction(Uri uri, ContentValues values, String selection,
-            String[] selectionArgs);
+    protected abstract int updateInTransaction(Uri uri, ContentValues values, String selection, String[] selectionArgs);
 
     /**
      * The equivalent of the {@link #delete} method, but invoked within a
      * transaction.
      */
     protected abstract int deleteInTransaction(Uri uri, String selection, String[] selectionArgs);
-
 
     protected SQLiteOpenHelper getDatabaseHelper() {
         return mOpenHelper;
@@ -80,20 +76,13 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
             mDb.beginTransactionWithListener(this);
             try {
                 result = insertInTransaction(uri, values);
-                if (result != null) {
-                    mNotifyChange = true;
-                }
                 mDb.setTransactionSuccessful();
             } finally {
                 mDb.endTransaction();
+                onEndTransaction();
             }
-
-            onEndTransaction();
         } else {
             result = insertInTransaction(uri, values);
-            if (result != null) {
-                mNotifyChange = true;
-            }
         }
         return result;
     }
@@ -105,18 +94,14 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
         mDb.beginTransactionWithListener(this);
         try {
             for (int i = 0; i < numValues; i++) {
-                Uri result = insertInTransaction(uri, values[i]);
-                if (result != null) {
-                    mNotifyChange = true;
-                }
+                insertInTransaction(uri, values[i]);
                 mDb.yieldIfContendedSafely();
             }
             mDb.setTransactionSuccessful();
         } finally {
             mDb.endTransaction();
+            onEndTransaction();
         }
-
-        onEndTransaction();
         return numValues;
     }
 
@@ -129,22 +114,14 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
             mDb.beginTransactionWithListener(this);
             try {
                 count = updateInTransaction(uri, values, selection, selectionArgs);
-                if (count > 0) {
-                    mNotifyChange = true;
-                }
                 mDb.setTransactionSuccessful();
             } finally {
                 mDb.endTransaction();
+                onEndTransaction();
             }
-
-            onEndTransaction();
         } else {
             count = updateInTransaction(uri, values, selection, selectionArgs);
-            if (count > 0) {
-                mNotifyChange = true;
-            }
         }
-
         return count;
     }
 
@@ -157,20 +134,13 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
             mDb.beginTransactionWithListener(this);
             try {
                 count = deleteInTransaction(uri, selection, selectionArgs);
-                if (count > 0) {
-                    mNotifyChange = true;
-                }
                 mDb.setTransactionSuccessful();
             } finally {
                 mDb.endTransaction();
+                onEndTransaction();
             }
-
-            onEndTransaction();
         } else {
             count = deleteInTransaction(uri, selection, selectionArgs);
-            if (count > 0) {
-                mNotifyChange = true;
-            }
         }
         return count;
     }
@@ -222,13 +192,7 @@ public abstract class SQLiteContentProvider extends ContentProvider implements S
     }
 
     protected void onEndTransaction() {
-        if (mNotifyChange) {
-            mNotifyChange = false;
-            notifyChange();
-        }
+        
     }
-    
-    protected void notifyChange() {
 
-    }
 }
